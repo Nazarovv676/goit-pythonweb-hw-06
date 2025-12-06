@@ -7,8 +7,9 @@ A PostgreSQL-backed university database project using SQLAlchemy 2.0, Alembic mi
 - **SQLAlchemy 2.0** with modern `Mapped[]` type hints
 - **Alembic** for database migrations
 - **Faker** for realistic test data generation
-- **10 analytical queries** for data analysis
-- **CRUD CLI** for managing Teachers, Groups, Students, and Subjects
+- **12 analytical queries** for data analysis (10 required + 2 advanced)
+- **Beautiful CLI** with Typer + Rich for managing the database
+- **Bilingual support** (English/Ukrainian) for query descriptions
 
 ## Schema
 
@@ -65,94 +66,168 @@ poetry run alembic upgrade head
 poetry run python seed.py
 ```
 
-### 6. Run queries
-
-```python
-# In Python shell or script
-from app.db import get_session
-from my_select import select_1, select_2, select_3
-
-with get_session() as session:
-    # Top 5 students by average grade
-    print(select_1(session))
-    
-    # Best student in a subject
-    print(select_2(session, "Mathematics"))
-    
-    # Average grade per group for a subject
-    print(select_3(session, "Physics"))
-```
-
-Or run all queries:
+### 6. Explore the CLI
 
 ```bash
-poetry run python -c "
-from app.db import get_session
-from my_select import *
+# Show all available commands
+poetry run python main.py --help
 
-with get_session() as session:
-    print('=== Top 5 Students ===')
-    for name, avg in select_1(session):
-        print(f'  {name}: {avg:.2f}')
-    
-    print('\n=== Average Grade (Stream) ===')
-    print(f'  {select_4(session):.2f}')
-"
+# Show database statistics
+poetry run python main.py stats
 ```
 
-### 7. Use the CRUD CLI
+## CLI Usage
+
+The CLI uses a hierarchical command structure with subcommands for each entity.
+
+### 📊 Database Statistics
 
 ```bash
-# List all teachers
-poetry run python main.py -a list -m Teacher
+poetry run python main.py stats
+```
+
+### 👨‍🏫 Teacher Management
+
+```bash
+# List all teachers (with subjects they teach)
+poetry run python main.py teacher list
+
+# Show teacher details
+poetry run python main.py teacher show --id 1
 
 # Create a new teacher
-poetry run python main.py -a create -m Teacher --name "John Smith"
+poetry run python main.py teacher create --name "John Smith"
 
 # Update a teacher
-poetry run python main.py -a update -m Teacher --id 1 --name "Jane Smith"
+poetry run python main.py teacher update --id 1 --name "Jane Smith"
 
-# Remove a teacher
-poetry run python main.py -a remove -m Teacher --id 1
+# Delete a teacher (use --force if they have subjects)
+poetry run python main.py teacher delete --id 1
+```
 
+### 👥 Group Management
+
+```bash
 # List all groups
-poetry run python main.py -a list -m Group
+poetry run python main.py group list
+
+# Show group with all students
+poetry run python main.py group show --id 1
 
 # Create a new group
-poetry run python main.py -a create -m Group --name "AD-104"
+poetry run python main.py group create --name "AD-104"
 
-# List all students
-poetry run python main.py -a list -m Student
+# Update a group
+poetry run python main.py group update --id 1 --name "AD-105"
+
+# Delete a group
+poetry run python main.py group delete --id 1
+```
+
+### 🎒 Student Management
+
+```bash
+# List all students (optionally filter by group)
+poetry run python main.py student list
+poetry run python main.py student list --group 1 --limit 20
+
+# Show student details with grades
+poetry run python main.py student show --id 1
 
 # Create a new student
-poetry run python main.py -a create -m Student --full-name "Alice Johnson" --group-id 1
+poetry run python main.py student create --name "Alice Johnson" --group 1
 
 # Update a student
-poetry run python main.py -a update -m Student --id 1 --full-name "Alice Smith" --group-id 2
+poetry run python main.py student update --id 1 --name "Alice Smith" --group 2
 
-# Create a subject
-poetry run python main.py -a create -m Subject --name "History" --teacher-id 1
+# Delete a student
+poetry run python main.py student delete --id 1
+```
 
+### 📚 Subject Management
+
+```bash
 # List all subjects
-poetry run python main.py -a list -m Subject
+poetry run python main.py subject list
+
+# Create a new subject
+poetry run python main.py subject create --name "History" --teacher 1
+
+# Update a subject
+poetry run python main.py subject update --id 1 --name "World History" --teacher 2
+
+# Delete a subject
+poetry run python main.py subject delete --id 1
+```
+
+### 📝 Grade Management
+
+```bash
+# List grades (filter by student or subject)
+poetry run python main.py grade list
+poetry run python main.py grade list --student 1
+poetry run python main.py grade list --subject 1 --limit 50
+
+# Add a new grade
+poetry run python main.py grade add --student 1 --subject 1 --value 85
+```
+
+### 🔍 Query Commands
+
+```bash
+# List all available queries (with EN/UA descriptions)
+poetry run python main.py query list
+
+# Run a specific query (uses sample data if params not provided)
+poetry run python main.py query run --num 1
+
+# Run query with specific parameters
+poetry run python main.py query run --num 2 --subject "Mathematics"
+poetry run python main.py query run --num 5 --teacher "John Smith"
+poetry run python main.py query run --num 6 --group "AD-101"
+poetry run python main.py query run --num 7 --group "AD-101" --subject "Physics"
+
+# Run all queries with sample data
+poetry run python main.py query all
 ```
 
 ## Queries Reference
 
-| Function | Description |
-|----------|-------------|
-| `select_1(session)` | Top 5 students by highest average grade |
-| `select_2(session, subject_name)` | Student with highest average in a subject |
-| `select_3(session, subject_name)` | Average grade per group for a subject |
-| `select_4(session)` | Average grade across entire stream |
-| `select_5(session, teacher_name)` | Subjects taught by a teacher |
-| `select_6(session, group_name)` | Students in a group |
-| `select_7(session, group_name, subject_name)` | Grades in a group for a subject |
-| `select_8(session, teacher_name)` | Average grade assigned by a teacher |
-| `select_9(session, student_name)` | Subjects attended by a student |
-| `select_10(session, student_name, teacher_name)` | Subjects taught to student by teacher |
-| `select_extra_1(session, teacher_name, student_name)` | Avg grade from teacher to student |
-| `select_extra_2(session, group_name, subject_name)` | Latest lesson grades |
+| # | Description (EN) | Опис (UA) |
+|---|------------------|-----------|
+| 1 | Top 5 students by average grade | Знайти 5 студентів із найбільшим середнім балом |
+| 2 | Best student in a subject | Знайти студента із найвищим середнім балом з предмета |
+| 3 | Average grade per group for subject | Знайти середній бал у групах з предмета |
+| 4 | Overall average grade | Знайти середній бал на потоці |
+| 5 | Subjects taught by teacher | Знайти які курси читає викладач |
+| 6 | Students in a group | Знайти список студентів у групі |
+| 7 | Grades in group for subject | Знайти оцінки студентів у групі з предмета |
+| 8 | Average grade by teacher | Знайти середній бал, який ставить викладач |
+| 9 | Subjects attended by student | Знайти список курсів, які відвідує студент |
+| 10 | Subjects by teacher for student | Список курсів, які студенту читає викладач |
+| 11 | Avg grade teacher→student | Середній бал, який викладач ставить студенту |
+| 12 | Last lesson grades | Оцінки на останньому занятті |
+
+### Programmatic Query Usage
+
+```python
+from app.db import get_session
+from my_select import select_1, select_2, select_4
+
+with get_session() as session:
+    # Top 5 students by average grade
+    top_students = select_1(session)
+    for name, avg in top_students:
+        print(f"{name}: {avg:.2f}")
+    
+    # Best student in Mathematics
+    best = select_2(session, "Mathematics")
+    if best:
+        print(f"Best in Math: {best[0]} ({best[1]:.2f})")
+    
+    # Overall average
+    print(f"Stream average: {select_4(session):.2f}")
+```
 
 ## Running Tests
 
@@ -212,7 +287,7 @@ poetry run python seed.py
 ├── tests/
 │   └── test_selects.py
 ├── alembic.ini        # Alembic configuration
-├── main.py            # CRUD CLI
+├── main.py            # Beautiful CLI (Typer + Rich)
 ├── my_select.py       # Analytical queries
 ├── seed.py            # Database seeder
 ├── pyproject.toml     # Poetry configuration
@@ -220,7 +295,17 @@ poetry run python seed.py
 └── README.md
 ```
 
+## Technologies
+
+- **Python 3.11+**
+- **SQLAlchemy 2.0** - Modern ORM with type hints
+- **Alembic** - Database migrations
+- **Faker** - Realistic test data generation
+- **Typer** - Modern CLI framework
+- **Rich** - Beautiful terminal output
+- **PostgreSQL** - Database
+- **Poetry** - Dependency management
+
 ## License
 
 MIT
-
