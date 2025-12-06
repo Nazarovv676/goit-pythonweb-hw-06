@@ -1,0 +1,55 @@
+[tool.poetry]
+name = "goit-pythonweb-hw-06"
+version = "1.0.0"
+description = "PostgreSQL-backed university database with SQLAlchemy 2.0, Alembic, and Faker"
+authors = ["Developer <developer@example.com>"]
+readme = "README.md"
+packages = [{include = "app"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+sqlalchemy = "^2.0"
+psycopg2-binary = "^2.9"
+alembic = "^1.13"
+faker = "^30.0"
+python-dotenv = "^1.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0"
+black = "^24.0"
+isort = "^5.13"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+    | alembic/versions
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip = ["alembic/versions"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v"
+
